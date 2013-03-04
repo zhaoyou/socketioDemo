@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      #msg {
+        color: #333
+      }
+    </style>
+    <script>
+      $(function(){
+        var socket = io.connect('http://localhost:8888');
+
+        socket.on("connect", function() {
+          $('#messageContainer').append($('<p>connected</p>'));
+        });
+
+        socket.on("message", function(msg) {
+          $('#messageContainer').append($('<p>' + msg + '</p>'));
+        });
+
+        socket.on("disconnect", function() {
+          $('#messageContainer').append($('<p>disconnected</p>'));
+        });
+
+        $('#submitmsg').click(function() {
+          var msg = $('#msg').val();
+          socket.send(msg);
+          $('#messageContainer').append($('<p>' + msg + '</p>'));
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="messageContainer"></div>
+    <input id="msg" name="msg" />
+    <input id="submitmsg" type="button" value="Submit"/>
+  </body>
+<html>
