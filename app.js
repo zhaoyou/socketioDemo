@@ -5,6 +5,8 @@ var app = require('http').createServer(handler)
 app.listen(8888);
 
 var messages = [];
+var onlinelist = [];
+
 function handler (req, res) {
   fs.readFile(__dirname + '/chat.html',
   function (err, data) {
@@ -19,6 +21,15 @@ function handler (req, res) {
 };
 
 io.sockets.on('connection', function (socket) {
+
+
+  // save client session info.
+  socket.on('storeclient', function(data){
+    onlinelist.push({
+      'userId': data.userId,
+      'clientId': socket.id
+    });
+  });
 
   socket.on('message', function (data) {
     messages.push(data);
