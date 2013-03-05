@@ -7,34 +7,76 @@
       #msg {
         color: #333
       }
+      #onlinelist {
+        position: relative;
+        display: inline-block;
+        width: 100px;
+        height: 250px;
+        border: solid 1px #ccc;
+        vertical-align: top;
+        margin-bottom: 20px;
+      }
+      #messageContainer {
+        position: relative;
+        display: inline-block;
+        width: 400px;
+        height: 250px;
+        border: solid 1px #999;
+      }
+
+      #msg {
+        margin-left: 100px;
+      }
     </style>
     <script>
       $(function(){
         var socket = io.connect('http://localhost:8888');
 
+        var userId = window.location.hash;
+        // hash like '#userId', random like '0.12341122'
+        userId =  (userId != '') ? userId.substr(1) : Math.random().toString().substr(2);
+
         socket.on("connect", function() {
-          $('#messageContainer').append($('<p>connected</p>'));
+          socket.emit('storeclient', {'userId': userId});
         });
 
-        socket.on("message", function(msg) {
-          $('#messageContainer').append($('<p>' + msg + '</p>'));
+        socket.on("message", function(message) {
+          console.log(message);
+          $('#messageContainer').append($('<p>' + message.sender +
+                                          ' say: ' + message.msg+ '</p>'));
         });
 
         socket.on("disconnect", function() {
           $('#messageContainer').append($('<p>disconnected</p>'));
         });
 
+        socket.on("onlineuser", function(list) {
+          console.log("onlinelist ", list);
+          $('#onlinelist').empty();
+          list.forEach(function(user){
+            $('#onlinelist').append($('<p>' + user.userId + '</p>'));
+          });
+        });
+
         $('#submitmsg').click(function() {
           var msg = $('#msg').val();
-          socket.send(msg);
-          $('#messageContainer').append($('<p>' + msg + '</p>'));
+          socket.emit('message', {
+            'to': 'all',
+            'msg': msg
+          });
+          $('#messageContainer').append($('<p> self say: ' + msg + '</p>'));
         });
       });
     </script>
   </head>
   <body>
-    <div id="messageContainer"></div>
-    <input id="msg" name="msg" />
+
+    <div id="onlinelist">
+    </div>
+    <div id="messageContainer">
+    </div>
+    <div></div>
+    <textarea id="msg" name="msg"></textarea>
     <input id="submitmsg" type="button" value="Submit"/>
   </body>
 <html>
