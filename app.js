@@ -34,22 +34,34 @@ io.sockets.on('connection', function (socket) {
     io.sockets.emit("onlineuser", onlinelist);
 
     // send to self online userlist.
-  //  socket.emit("onlineuser", onlinelist);
+    //  socket.emit("onlineuser", onlinelist);
+    messages.forEach(function(msg){
+      console.log("message: ", msg, getUserId(socket.id),msg.to.indexOf(getUserId(socket.id)) );
+
+      if (msg.to == 'all' || msg.to.indexOf(getUserId(socket.id)) > -1)
+        socket.emit('message', msg);
+    });
   });
 
   socket.on('message', function (data) {
-    console.log('data.to',  data.to, data.msg);
+    console.log('data.tolist , msg: ',  data.to, data.msg);
     var message = {
       'sender': getUserId(socket.id),
-      'msg': data.msg
+      'msg': data.msg,
+      'to': data.to
     };
     if (data.to == 'all') {
-      messages.push(message);
       socket.broadcast.emit('message', message);
       console.log('from user message', message);
     } else {
-      io.sockets.socket[getClientId(data.to)].emit('message', message);
+      var toList = data.to.split(',');
+      toList.forEach(function(e){
+        console.log(io.sockets.sockets);
+        io.sockets.sockets[getClientId(e)].emit('message', message);
+      });
     }
+
+    messages.push(message);
     console.log('receive: ' + data);
   });
 
@@ -60,15 +72,12 @@ io.sockets.on('connection', function (socket) {
       var client = onlinelist[i];
       if (client.clientId == socket.id) {
         userId = client.userId;
+        console.log("user disconnect", userId);
         onlinelist.splice(i, 1);
+        break;
       }
     }
-    console.log("user disconnect", userId);
     socket.broadcast.emit("onlineuser", onlinelist);
-  });
-
-  messages.forEach(function(msg){
-    socket.emit('message', msg);
   });
 
 });
@@ -84,7 +93,6 @@ function getClientId(userId) {
 function getUserId(clientId) {
   for (var j = 0; j < onlinelist.length; j++) {
     if (onlinelist[j].clientId == clientId) {
-      console.log(clientId, onlinelist[j].userId);
       return onlinelist[j].userId;
     }
   }

@@ -22,10 +22,16 @@
         width: 400px;
         height: 250px;
         border: solid 1px #999;
+        overflow-y: scroll;
       }
 
       #msg {
         margin-left: 100px;
+      }
+
+      textarea {
+        height: 70px;
+        width: 350px;
       }
     </style>
     <script>
@@ -37,34 +43,49 @@
         userId =  (userId != '') ? userId.substr(1) : Math.random().toString().substr(2);
 
         socket.on("connect", function() {
+          $('#messageContainer').empty();
+          $('#messageContainer').append($('<p style="color:green;">connected</p>'));
           socket.emit('storeclient', {'userId': userId});
         });
 
         socket.on("message", function(message) {
           console.log(message);
-          $('#messageContainer').append($('<p>' + message.sender +
+          $('#messageContainer').append($('<p>' + (message.sender == userId ? "self": message.sender) +
                                           ' say: ' + message.msg+ '</p>'));
+          $('#messageContainer')[0].scrollTop = $('#messageContainer')[0].clientHeight;
         });
 
         socket.on("disconnect", function() {
-          $('#messageContainer').append($('<p>disconnected</p>'));
+          $('#messageContainer').append($('<p style="color:red;">disconnected</p>'));
         });
 
         socket.on("onlineuser", function(list) {
           console.log("onlinelist ", list);
           $('#onlinelist').empty();
           list.forEach(function(user){
-            $('#onlinelist').append($('<p>' + user.userId + '</p>'));
+            if (user.userId != userId) {
+              $('#onlinelist').append($('<p><input class="user" value="' + user.userId
+                  + '" type="checkbox"/>' + user.userId + '</p>'));
+            } else {
+              $('#onlinelist').append($('<p>' + user.userId + '</p>'));
+            }
           });
         });
 
         $('#submitmsg').click(function() {
           var msg = $('#msg').val();
+
+          var toList = []
+          $.each($('input:checked'), function(){
+            toList.push($(this).val());
+          });
+          console.log("tolist: " , toList.toString());
           socket.emit('message', {
-            'to': 'all',
+            'to': (toList.length == 0) ? 'all' : toList.toString(),
             'msg': msg
           });
           $('#messageContainer').append($('<p> self say: ' + msg + '</p>'));
+          $('#messageContainer')[0].scrollTop = $('#messageContainer')[0].clientHeight;
         });
       });
     </script>
